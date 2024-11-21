@@ -23,7 +23,7 @@ const routes = (app) => {
     }
   });
 
-  app.post("/create", async (req, res) => {
+  app.post("/posts", async (req, res) => {
     try {
       await newPost(req, res);
     } catch (error) {
