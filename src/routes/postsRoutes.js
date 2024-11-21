@@ -1,28 +1,18 @@
-import { getAllPosts, getPostById } from "../controllers/postController.js";
-import { ObjectId } from "mongodb";
+import { getAllPosts, getPostById, newPost } from "../controllers/postController.js";
 
-// Funções de rota
 const routes = (app) => {
-  // Endpoint para retornar todos os posts
   app.get("/posts", async (req, res) => {
     try {
-      const posts = await getAllPosts(); // Chama o controller para buscar todos os posts
+      const posts = await getAllPosts(); 
       res.status(200).json(posts);
     } catch (error) {
       res.status(500).json({ message: "Error retrieving posts", error: error.message });
     }
   });
 
-  // Endpoint para retornar um post específico por ID
   app.get("/posts/:id", async (req, res) => {
-    const { id } = req.params;
-
-    if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid ID format" });
-    }
-
     try {
-      const post = await getPostById(id); // Chama o controller para buscar o post pelo ID
+      const post = await getPostById(req.params.id); 
       if (post) {
         res.status(200).json(post);
       } else {
@@ -30,6 +20,14 @@ const routes = (app) => {
       }
     } catch (error) {
       res.status(500).json({ message: "Error retrieving post", error: error.message });
+    }
+  });
+
+  app.post("/create", async (req, res) => {
+    try {
+      await newPost(req, res);
+    } catch (error) {
+      res.status(500).json({ message: "Error creating post", error: error.message });
     }
   });
 };
