@@ -1,24 +1,39 @@
 # Posts API 📝
 
-API para gerenciar posts, construída com **Node.js**, **Express** e **MongoDB**.
+API for managing posts, built with **Node.js**, **Express**, and **MongoDB**.
 
-## 🛠 Tecnologias
+## 🛠 Technologies
 
 - **Node.js**
 - **Express**
 - **MongoDB** (via MongoClient)
+- **Multer** (for file uploads)
 
-## ⚡ Funcionalidades
+## ⚡ Features
 
-- **GET /posts**: Retorna todos os posts.
-- **GET /posts/:id**: Retorna um post específico pelo ID.
-- **POST /posts**: Cria um novo post.
+- **GET /posts**: Returns all posts.
+- **POST /posts**: Creates a new post.
+- **POST /upload**: Uploads an image and creates a post with it.
+- **PUT /upload/:id**: Updates a post with new text (generated from the image).
 
-## 🛠 Testando com Thunder Client
+## 🛠 Testing with Thunder Client
 
-1. **Instale o Thunder Client** no **Visual Studio Code**.
-2. **Criar Requisição**:
-   - **GET /posts**: `http://localhost:5000/posts`
-   - **GET /posts/:id**: `http://localhost:5000/posts/{id}`
-   - **POST /posts**: Enviar um JSON com os dados do post.
+1. **Install Thunder Client** in **Visual Studio Code**.
+2. **Create Request**:
+   - **GET /posts**: `http://localhost:3000/posts`
+   - **POST /posts**: Send a JSON with the post data. Example:
+     ```json
+     {
+       "description": "Post text",
+       "imgUrl": "image.png",
+       "alt": "Alternative text"
+     }
+     ```
+   - **POST /upload**: Send an image via `form-data` with the field name `image`.
+   - **PUT /upload/:id**: Send a JSON with post updates. Example:
+     ```json
+     {
+       "alt": "New alternative text"
+     }
+     ```
 

@@ -1,69 +1,57 @@
-import { MongoClient, ObjectId } from "mongodb"; 
-import connectToDatabase from "../config/dbconfig.js";
+import { getAllPosts, createPost, updatePost as updatePostInDatabase } from "../models/postModel.js";
+import fs from "fs";
+import generateDescriptionWithGemini from "../services/geminiService.js";
 
-let db; 
-
-async function initializeDB() {
-  try {
-    const client = await connectToDatabase(process.env.CONNECTION_STRING);
-    db = client.db("insta-likes");
-    console.log("Database connected successfully!");
-  } catch (error) {
-    console.error("Failed to connect to the database:", error);
-    throw new Error("Database connection error");
-  }
+export async function listPosts(req, res) {
+  const posts = await getAllPosts();
+  res.status(200).json(posts);
 }
 
-
-export async function getAllPosts() {
-  if (!db) {
-    throw new Error("Database not initialized. Call initializeDB first.");
-  }
-  try {
-    const collection = db.collection("posts");
-    const posts = await collection.find().toArray();
-    return posts;
-  } catch (error) {
-    throw new Error("Error fetching posts: " + error.message);
-  }
-}
-
-export async function getPostById(id) {
-  if (!db) {
-    throw new Error("Database not initialized. Call initializeDB first.");
-  }
-  try {
-    if (!ObjectId.isValid(id)) {
-      throw new Error("Invalid ID format");
-    }
-    const collection = db.collection("posts");
-    const post = await collection.findOne({ _id: new ObjectId(id) });
-    return post || null; 
-  } catch (error) {
-    throw new Error("Error fetching post by ID: " + error.message);
-  }
-}
-
-export async function newPost(req, res) {
-  if (!db) {
-    return res.status(500).json({ error: "Database not initialized" });
-  }
+export async function createNewPost(req, res) {
   const newPost = req.body;
-
-  if (!newPost || Object.keys(newPost).length === 0) {
-    return res.status(400).json({ error: "Invalid or missing post data" });
-  }
-
   try {
-    const collection = db.collection("posts");
-    const result = await collection.insertOne(newPost);
-    return res.status(201).json({ id: result.insertedId, ...newPost });
+    const createdPost = await createPost(newPost);  
+    res.status(200).json(createdPost);
   } catch (error) {
-    console.error("Error creating post:", error);
-    return res.status(500).json({ error: "Failed to create post", details: error.message });
+    console.error(error.message);
+    res.status(500).json({ error: "Request failed" });
   }
 }
 
-initializeDB().catch((error) => {
-  console.error("Failed to initialize database:", error);
-});
+export async function uploadImage(req, res) {
+  const newPost = {
+    description: "",
+    imgUrl: req.file.originalname,
+    alt: ""
+  };
+  try {
+    const createdPost = await createPost(newPost);  
+    const updatedImagePath = `uploads/${createdPost.insertedId}.png`;
+    fs.renameSync(req.file.path, updatedImagePath);
+    res.status(200).json(createdPost);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Request failed" });
+  }
+}
+
+
+export async function updatePost(req, res) {
+  const id = req.params.id;
+  const imageUrl = `http://localhost:3000/${id}.png`;
+
+  try {
+    const imageBuffer = fs.readFileSync(`uploads/${id}.png`);
+    const description = await generateDescriptionWithGemini(imageBuffer);
+    const post = {
+      imgUrl: imageUrl,
+      description: description,
+      alt: req.body.alt
+    };
+    const updatedPost = await updatePostInDatabase(id, post); 
+    res.status(200).json(updatedPost);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Request failed" });
+  }
+}

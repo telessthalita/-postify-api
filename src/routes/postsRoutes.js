@@ -1,35 +1,32 @@
-import { getAllPosts, getPostById, newPost } from "../controllers/postController.js";
+import express from "express";
+import multer from "multer";
+import cors from "cors";
+
+import { updatePost, listPosts, createNewPost, uploadImage } from "../controllers/postController.js";
+
+const corsOptions = {
+  origin: "http://localhost:8000",
+  optionsSuccessStatus: 200 
+};
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); 
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname); 
+  }
+});
+const upload = multer({ dest: "./uploads", storage });
 
 const routes = (app) => {
-  app.get("/posts", async (req, res) => {
-    try {
-      const posts = await getAllPosts(); 
-      res.status(200).json(posts);
-    } catch (error) {
-      res.status(500).json({ message: "Error retrieving posts", error: error.message });
-    }
-  });
+  app.use(cors(corsOptions)); 
+  app.use(express.json()); 
 
-  app.get("/posts/:id", async (req, res) => {
-    try {
-      const post = await getPostById(req.params.id); 
-      if (post) {
-        res.status(200).json(post);
-      } else {
-        res.status(404).json({ message: "Post not found" });
-      }
-    } catch (error) {
-      res.status(500).json({ message: "Error retrieving post", error: error.message });
-    }
-  });
-
-  app.post("/posts", async (req, res) => {
-    try {
-      await newPost(req, res);
-    } catch (error) {
-      res.status(500).json({ message: "Error creating post", error: error.message });
-    }
-  });
+  app.get("/posts", listPosts);  
+  app.post("/posts", createNewPost);  
+  app.post("/upload", upload.single("image"), uploadImage);  
+  app.put("/upload/:id", updatePost);  
 };
 
 export default routes;

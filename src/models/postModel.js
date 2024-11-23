@@ -1,23 +1,39 @@
-import mongoose from 'mongoose';
+import 'dotenv/config';
+import { ObjectId } from "mongodb";
+import connectToDatabase from "../config/dbConfig.js";
 
-const postSchema = new mongoose.Schema({
-    description: {
-        type: String,
-        required: true,
-        maxlength: 500,
-    },
-    image: {
-        type: String,
-        required: true,
-        match: /^https?:\/\/(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,7}(?:\/[^\s]*)?$/, 
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now, 
-    },
-});
 
-const Post = mongoose.model('Post', postSchema);
+let connection;
 
-export default Post;
- 
+async function getConnection() {
+  if (!connection) {
+    connection = await connectToDatabase(process.env.CONNECTION_STRING);
+  }
+  return connection;
+}
+
+export async function getAllPosts() {
+  const db = (await getConnection()).db("insta-like");
+  const collection = db.collection("posts");
+
+  return collection.find().toArray();
+}
+
+export async function createPost(newPost) {
+  const db = (await getConnection()).db("insta-like");
+  const collection = db.collection("posts");
+
+  return collection.insertOne(newPost);
+}
+
+export async function updatePost(id, updatedPost) {
+  const db = (await getConnection()).db("insta-like");
+  const collection = db.collection("posts");
+
+  const objID = new ObjectId(id);
+
+  return collection.updateOne(
+    { _id: objID },
+    { $set: updatedPost }
+  );
+}
